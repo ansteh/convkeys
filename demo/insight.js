@@ -18,7 +18,7 @@ const getNet = () => {
 };
 
 const getTrainer = (net) => {
-  return new convnetjs.Trainer(net, {learning_rate:0.01, l2_decay:0.001});
+  return new convnetjs.Trainer(net, {method: 'adadelta', learning_rate:0.01, l2_decay:0.001, batch_size: 1, momentum:0.9});
 };
 
 const parseToNumber = (value) => {
@@ -28,7 +28,7 @@ const parseToNumber = (value) => {
   return 0;
 };
 
-var prepare = (row) => {
+const prepare = (row) => {
   let input = [];
 
   input.push(parseToNumber(row.info.bid));
@@ -77,28 +77,37 @@ const preview = () => {
     let net = getNet();
     let trainer = getTrainer(net);
 
-    _.forEach(sets.training, (meta) => {
-      //console.log(meta);
-      let options = prepare(meta);
-      //console.log(options);
-      trainer.train(new convnetjs.Vol(options.input), options.output);
-    });
+    let prepared = _.map(sets.training, prepare);
 
     var rightCount = 0;
-    var count = 1;
+    var count = 1000;
+    var percent = 0.2;
+
     for(var i=0; i<count; i+=1) {
-      _.forEach(sets.testing, (meta) => {
-        let options = prepare(meta);
-        //trainer.train(new convnetjs.Vol(options.input), options.output);
-        var x = new convnetjs.Vol(options.input);
-        var probability_volume2 = net.forward(x);
-        //console.log('probability that x is class 0: ' + probability_volume2.w[0]);
-        let forecast = probability_volume2.w[0] > 0.5 ? 0 : 1;
-        if(forecast === options.output) rightCount += 1;
+      let epoch = _.slice(_.shuffle(prepared), 0, Math.round(percent*prepared.length));
+      //console.log(epoch.length);
+      _.forEach(epoch, (options) => {
+        trainer.train(new convnetjs.Vol(options.input), options.output);
       });
     }
 
-    console.log(rightCount, sets.testing.length*count, rightCount/(sets.testing.length*count));
+    /*for(var i=0; i<count; i+=1) {
+      _.forEach(prepared, (options) => {
+        trainer.train(new convnetjs.Vol(options.input), options.output);
+      });
+    }*/
+
+    _.forEach(sets.testing, (meta) => {
+      let options = prepare(meta);
+      //trainer.train(new convnetjs.Vol(options.input), options.output);
+      var x = new convnetjs.Vol(options.input);
+      var probability_volume2 = net.forward(x);
+      //console.log('probability that x is class 0: ' + probability_volume2.w[0]);
+      let forecast = probability_volume2.w[0] > 0.5 ? 0 : 1;
+      if(forecast === options.output) rightCount += 1;
+    });
+
+    console.log(rightCount, sets.testing.length, rightCount/(sets.testing.length));
   }).catch(console.log);
 };
 
