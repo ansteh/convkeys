@@ -4,7 +4,7 @@ const loadJsonFile = require('load-json-file');
 const path = require('path');
 const _ = require('lodash');
 
-const getTrainer = () => {
+const getNet = () => {
   let layer_defs = [];
   layer_defs.push({type:'input', out_sx:1, out_sy:1, out_depth:2});
   layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
@@ -14,9 +14,11 @@ const getTrainer = () => {
   let net = new convnetjs.Net();
   net.makeLayers(layer_defs);
 
-  let trainer = new convnetjs.Trainer(net, {learning_rate:0.01, l2_decay:0.001});
+  return net;
+};
 
-  return trainer;
+const getTrainer = (net) => {
+  return new convnetjs.Trainer(net, {learning_rate:0.01, l2_decay:0.001});
 };
 
 const parseToNumber = (value) => {
@@ -52,21 +54,12 @@ const splitSets = (data, percent) => {
   };
 };
 
-loadJsonFile(path.resolve(__dirname, 'keywords.json')).then(json => {
-  //let trainer = getTrainer();
-  let layer_defs = [];
-  layer_defs.push({type:'input', out_sx:1, out_sy:1, out_depth:2});
-  layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
-  layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
-  layer_defs.push({type:'softmax', num_classes:2});
-
-  let net = new convnetjs.Net();
-  net.makeLayers(layer_defs);
-
-  let trainer = new convnetjs.Trainer(net, {learning_rate:0.01, l2_decay:0.001});
+loadJsonFile(path.resolve(__dirname, 'resources/keywords.json')).then(json => {
+  let net = getNet();
+  let trainer = getTrainer(net);
 
   let sets = splitSets(json, 0.8);
-	console.log(json.length, json[0], _.last(json), prepare(_.first(json)));
+	//console.log(json.length, json[0], _.last(json), prepare(_.first(json)));
 
   _.forEach(sets.training, (meta) => {
     let options = prepare(meta);
@@ -80,10 +73,10 @@ loadJsonFile(path.resolve(__dirname, 'keywords.json')).then(json => {
     //trainer.train(new convnetjs.Vol(options.input), options.output);
     var x = new convnetjs.Vol(options.input);
     var probability_volume2 = net.forward(x);
-    console.log('probability that x is class 0: ' + probability_volume2.w[0]);
+    //console.log('probability that x is class 0: ' + probability_volume2.w[0]);
     let forecast = probability_volume2.w[0] > 0.5 ? 0 : 1;
     if(forecast === options.output) rightCount += 1;
   });
+
   console.log(rightCount, sets.testing.length, rightCount/sets.testing.length );
-	//=> {foo: true}
 }).catch(console.log);
