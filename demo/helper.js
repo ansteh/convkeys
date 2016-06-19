@@ -20,5 +20,14 @@ const load = (filename) => {
   return loadJsonFile(path.resolve(__dirname, `resources/${filename}.json`));
 };
 
+const getAverageLoss = (stats) => {
+  let sum = _.sumBy(stats, function(data) {
+    if(data.loss === Infinity) return 0;
+    return data.loss;
+  });
+  return sum/stats.length;
+};
+
 exports.splitSets = splitSets;
 exports.load = load;
+exports.getAverageLoss = getAverageLoss;

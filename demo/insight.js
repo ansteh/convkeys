@@ -7,8 +7,9 @@ const keywords = require('./keywords.js');
 const getNet = () => {
   let layer_defs = [];
   layer_defs.push({type:'input', out_sx:1, out_sy:1, out_depth:7});
+  layer_defs.push({type:'fc', num_neurons:10, activation:'relu'});
   layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
-  layer_defs.push({type:'fc', num_neurons:20, activation:'relu'});
+  //layer_defs.push({type:'fc', num_neurons:6, activation:'relu'});
   layer_defs.push({type:'softmax', num_classes:2});
 
   let net = new convnetjs.Net();
@@ -83,19 +84,19 @@ const preview = () => {
     var count = 1000;
     var percent = 0.2;
 
+    var stats = [];
+    let batch_count = Math.round(percent*prepared.length);
     for(var i=0; i<count; i+=1) {
-      let epoch = _.slice(_.shuffle(prepared), 0, Math.round(percent*prepared.length));
+      let epoch = _.slice(_.shuffle(prepared), 0, batch_count);
       //console.log(epoch.length);
-      _.forEach(epoch, (options) => {
-        trainer.train(new convnetjs.Vol(options.input), options.output);
+      _.forEach(epoch, (options, index) => {
+        stats.push(trainer.train(new convnetjs.Vol(options.input), options.output));
+        //console.log(`training ${batch_count*i+index} :`, helper.getAverageLoss(stats));
       });
     }
 
-    /*for(var i=0; i<count; i+=1) {
-      _.forEach(prepared, (options) => {
-        trainer.train(new convnetjs.Vol(options.input), options.output);
-      });
-    }*/
+    console.log(stats.length, _.first(stats), _.last(stats));
+    console.log(helper.getAverageLoss(stats));
 
     _.forEach(sets.testing, (meta) => {
       let options = prepare(meta);

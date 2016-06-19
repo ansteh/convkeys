@@ -3,6 +3,7 @@ const convnetjs = require('convnetjs');
 const loadJsonFile = require('load-json-file');
 const path = require('path');
 const _ = require('lodash');
+const helper = require('./helper.js');
 
 const getNet = () => {
   let layer_defs = [];
@@ -61,10 +62,13 @@ loadJsonFile(path.resolve(__dirname, 'resources/keywords.json')).then(json => {
   let sets = splitSets(json, 0.8);
 	//console.log(json.length, json[0], _.last(json), prepare(_.first(json)));
 
-  _.forEach(sets.training, (meta) => {
+  var stats = [];
+  _.forEach(sets.training, (meta, index) => {
     let options = prepare(meta);
-    trainer.train(new convnetjs.Vol(options.input), options.output);
+    stats.push(trainer.train(new convnetjs.Vol(options.input), options.output));
+    //console.log(`training ${index} :`, helper.getAverageLoss(stats));
   });
+  console.log('average loss:', helper.getAverageLoss(stats));
 
   var rightCount = 0;
 
@@ -78,5 +82,5 @@ loadJsonFile(path.resolve(__dirname, 'resources/keywords.json')).then(json => {
     if(forecast === options.output) rightCount += 1;
   });
 
-  console.log(rightCount, sets.testing.length, rightCount/sets.testing.length );
+  console.log('validation accurancy', rightCount/sets.testing.length );
 }).catch(console.log);
