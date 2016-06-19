@@ -3,6 +3,13 @@ const loadJsonFile = require('load-json-file');
 const path = require('path');
 const _ = require('lodash');
 
+const parseToNumber = (value) => {
+  if(_.isNumber(value)) {
+    return value;
+  }
+  return 0;
+};
+
 const splitSets = (data, percent) => {
   data = _.shuffle(data);
 
@@ -31,3 +38,4 @@ const getAverageLoss = (stats) => {
 exports.splitSets = splitSets;
 exports.load = load;
 exports.getAverageLoss = getAverageLoss;
+exports.parseToNumber = parseToNumber;
