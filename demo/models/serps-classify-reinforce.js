@@ -1,14 +1,14 @@
 'use strict';
 const convnetjs = require('convnetjs');
 const _ = require('lodash');
-const helper = require('./helper.js');
-const serps = require('./serps.js');
+const helper = require('../helper.js');
+const serps = require('../serps.js');
 
 /* insert into: node_modules/convnetjs/build/deepqlearn.js
 var convnetjs = require('convnetjs');
 var cnnutil = require('./util.js');
 */
-const deepqlearn = require('../node_modules/convnetjs/build/deepqlearn.js');
+const deepqlearn = require('../../node_modules/convnetjs/build/deepqlearn.js');
 
 var prepare = (row) => {
   let input = [];

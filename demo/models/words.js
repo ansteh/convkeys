@@ -3,7 +3,7 @@ const convnetjs = require('convnetjs');
 const loadJsonFile = require('load-json-file');
 const path = require('path');
 const _ = require('lodash');
-const helper = require('./helper.js');
+const helper = require('../helper.js');
 
 const getNet = () => {
   let layer_defs = [];

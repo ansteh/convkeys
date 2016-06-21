@@ -1,8 +1,8 @@
 'use strict';
 const convnetjs = require('convnetjs');
 const _ = require('lodash');
-const helper = require('./helper.js');
-const keywords = require('./keywords.js');
+const helper = require('../helper.js');
+const keywords = require('../keywords.js');
 
 const getNet = () => {
   let layer_defs = [];

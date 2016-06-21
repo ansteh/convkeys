@@ -1,8 +1,8 @@
 'use strict';
 const convnetjs = require('convnetjs');
 const _ = require('lodash');
-const helper = require('./helper.js');
-const deepqlearn = require('../node_modules/convnetjs/build/deepqlearn.js');
+const helper = require('../helper.js');
+const deepqlearn = require('../../node_modules/convnetjs/build/deepqlearn.js');
 
 var prepare = (row) => {
   let input = [];
