@@ -4,6 +4,8 @@ const helper = require('./helper.js');
 const Promise = require('bluebird');
 const path = require('path');
 const fs = require('fs');
+const keywords = require('./keywords.js');
+const leven = require('leven');
 
 const blueprint = _.fill(Array(20), 0);
 
@@ -36,8 +38,7 @@ const getSerps = (fileNames) => {
     fileName = _.replace(fileName, '.json', '');
     return helper.load(`crawled/${fileName}`)
       .then((data) => {
-        data = _.filter(data, (point) => _.has(point, 'gsurls'));
-        return _.map(data, prepare);
+        return _.filter(data, (point) => _.has(point, 'gsurls'));
       });
   });
 };
@@ -45,6 +46,7 @@ const getSerps = (fileNames) => {
 const writePreparedAsFile = () => {
   return helper.getFilenames(path.resolve(__dirname, 'resources/crawled'))
   .then(getSerps)
+  .then(data => _.map(data, prepare))
   .then((data) => {
     data = _.flatten(data);
     console.log(data.length);
@@ -65,7 +67,116 @@ const getPrepared = () => {
   });
 };
 
+const saveKeywordNames = () => {
+  return helper.getFilenames(path.resolve(__dirname, 'resources/crawled'))
+    .then(getSerps)
+    .then(data => _.flatten(data))
+    .then(data => _.map(data, point => point.keyword))
+    .then((data) => {
+      console.log(_.first(data), data.length);
+      fs.writeFile(path.resolve(__dirname, 'resources/keyword-names.json'), JSON.stringify(data), () => {
+        console.log('crawled serps saved as keyword-names.json!');
+      });
+    });
+};
+
+//saveKeywordNames();
+
+const getKeywordNames = () => {
+  return new Promise((resolve, reject) => {
+    helper.load('keyword-names')
+    .then((data) => {
+      resolve(_.uniq(data));
+    })
+    .catch(reject);
+  });
+};
+
+const levenKeywords = _.curry((names, count, needle) => {
+  let targets = _.filter(names, name => Math.abs(needle.length - name.length) < 10);
+  //console.log(targets.length);
+  let levens = _.map(targets, name => {
+    return {
+      name: name,
+      leven: leven(needle, name)
+    }
+  });
+  levens = _.sortBy(levens, function(o) { return o.leven; });
+  return _.slice(levens, 1, count);
+});
+
+const getKeywordsWithLeven = (count) => {
+  return getKeywordNames()
+    .then((names) => {
+      if(count) names = _.slice(names, 0, count);
+      let parse = levenKeywords(names, 10);
+      /*_.forEach(names, (needle, index) => {
+        //console.log(needle, parse(needle));
+        console.log(`levenshtein progress: ${Math.round(index/names.length*100, 10)} %`);
+      });*/
+      return _.map(names, (needle, index) => {
+        let result = {
+          needle: needle,
+          leven:  parse(needle)
+        };
+        //console.log(result);
+        console.log(`levenshtein progress:${index/names.length}  ${Math.round(index/names.length*100, 10)} %`);
+        return result;
+      });
+    });
+};
+
+const findKeywordMeta = (data, keyword) => {
+  return _.find(data, point => point.keyword === keyword);
+};
+
+const writePreparedLevenshteinAsFile = (levens) => {
+  return helper.getFilenames(path.resolve(__dirname, 'resources/crawled'))
+  .then(getSerps)
+  .then((data) => {
+    data = _.flatten(data);
+    console.log(data.length);
+
+    let extractRow = (leven) => {
+      let prepared = _.map(leven.leven, (info) => {
+        let neighbour = prepare(findKeywordMeta(data, info.name));
+        neighbour.push(info.leven);
+        return neighbour;
+      });
+      prepared.push(prepare(findKeywordMeta(data, leven.needle)));
+      return _.flatten(prepared);
+    };
+
+    let rows = _.map(levens, extractRow);
+    //console.log(rows.length, _.last(rows));
+
+    fs.writeFile(path.resolve(__dirname, 'resources/leven.json'), JSON.stringify(rows), () => {
+      console.log('crawled serps saved as leven.json!');
+    });
+
+    //return _.first(data);
+    return 'prepare to save as file: leven.json';
+  })
+  .catch(console.log);
+};
+
+/*getKeywordsWithLeven(10000)
+.then((levens) => {
+  return writePreparedLevenshteinAsFile(levens);
+})
+.then(console.log);*/
+
+const getLeven = () => {
+  return helper.load('leven')
+  .then((data) => {
+    //console.log(data.length);
+    //console.log(_.first(data));
+    return data;
+  });
+};
+
 module.exports = {
   get: getPrepared,
-  write: writePreparedAsFile
+  write: writePreparedAsFile,
+  getLeven: getLeven
 };

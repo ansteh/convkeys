@@ -19,6 +19,13 @@ const getKeywords = () => {
   });
 };
 
+exports.getNames= () => {
+  return getKeywords().then((keywords) => {
+    //console.log(keywords.length);
+    return _.map(keywords, obj => obj.keyword);
+  }).catch(console.log);
+};
+
 exports.getInfo = (needles) => {
   return getKeywords().then((keywords) => {
     //console.log(keywords.length);
